@@ -1,3 +1,5 @@
+# Phase 0 Objective Truth Contract: fixed costs apply only to MONEY; DISTANCE/TIME must not include fixed costs; certify_phase0 must remain deterministic.
+
 import sys
 import os
 import json
@@ -9,6 +11,18 @@ from routeopt.models import OptimizeRequest, Stop, Vehicle, Depot, Capacity, Sol
 def fail(msg):
     print(f"FAIL: {msg}")
     sys.exit(1)
+
+def pass_chk(msg):
+    print(f"PASS: {msg}")
+
+def first_non_empty_vehicle_id(resp):
+    if not resp or not resp.routes: return "None"
+    for r in resp.routes:
+        # Check if route performs any work (has steps and time > 0, or just steps?)
+        # For this scenario, we expect valid routes to have steps.
+        if r.steps and len(r.steps) > 0:
+            return r.vehicle_id
+    return "None"
 
 def pass_chk(msg):
     print(f"PASS: {msg}")
@@ -67,8 +81,9 @@ def run_suite():
 
         t_time = r_time.routes[0].total_time_min if r_time.routes else 0
         d_time = r_dist.routes[0].total_time_min if r_dist.routes else 0
-        d_v = r_dist.routes[0].vehicle_id if r_dist.routes else "None"
-        t_v = r_time.routes[0].vehicle_id if r_time.routes else "None"
+        
+        d_v = first_non_empty_vehicle_id(r_dist)
+        t_v = first_non_empty_vehicle_id(r_time)
         
         print(f"  Dist Status: {r_dist.summary.status}")
         print(f"  Time Status: {r_time.summary.status}")
@@ -77,11 +92,9 @@ def run_suite():
         print(f"  Dist Veh: {d_v} (km: {d_km}) | Time Veh: {t_v} (km: {t_km})")
         print(f"  Unserved Time: {r_time.summary.unserved_stop_ids}")
         
-        # Check Zero Time
-        if not r_time.routes or t_time <= 0:
-            # fail(f"Zero/Empty Time in TIME model. Time={t_time}")
-            print(f"FAIL IGNORED: Zero Time. Time={t_time}") # Don't exit yet, check output
-        t_v = r_time.routes[0].vehicle_id if r_time.routes else "None"
+        # Check Zero Time - FATAL
+        if t_v != "None" and t_time <= 0:
+             fail(f"Zero/Empty Time in TIME model. Time={t_time}, status={r_time.summary.status}")
         
         if d_v != "V_SLOW":
             fail(f"DISTANCE picked {d_v}, expected V_SLOW.")
@@ -90,7 +103,7 @@ def run_suite():
             fail(f"TIME picked {t_v}, expected V_FAST.")
             
         # Check Money
-        m_v = r_money.routes[0].vehicle_id if r_money.routes else "None"
+        m_v = first_non_empty_vehicle_id(r_money)
         print(f"  Money Veh: {m_v}")
         
         if m_v != "V_SLOW":
@@ -103,7 +116,6 @@ def run_suite():
     pass_chk("Objective Truth & Stability")
 
     # 2. DROP PENALTY SCALING
-    print("\n--- Drop Penalty Check ---")
     print("\n--- Drop Penalty Check ---")
     stops_drop = [Stop(id="S_Drop", lat=1.0, lng=0.0, demand_units=1, service_time_min=0)] # Far away -> High Cost
     # Cost ~ 1000km.

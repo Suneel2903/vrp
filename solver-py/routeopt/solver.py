@@ -1,3 +1,4 @@
+# Phase 0 Objective Truth Contract: fixed costs apply only to MONEY; DISTANCE/TIME must not include fixed costs; certify_phase0 must remain deterministic.
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 from typing import List, Tuple

@@ -19,7 +19,7 @@ Command: `python tests/verify_all.py`
 | `verify_p0.py` | **PASS** | Core sanity, vehicle limits, wait time check. |
 | `verify_p1_p2.py` | **PASS** | Physics (Mass) and Green (CO2) logic. |
 | `verify_p3.py` | **PASS** | Multi-trip sequencing N=2. |
-| `certify_phase0.py` | **PASS** | Objective Truth validated. Distance/Time/Money models diverge correctly. |
+| `certify_phase0.py` | **PASS** | Objective Truth validated. Distance/Time/Money models diverge correctly. Strict fatal checks enforced. |
 
 ## CI & Documentation
 - **CI Workflow**: `.github/workflows/ci.yml` created.
@@ -32,6 +32,12 @@ cd solver-py
 .\.venv\Scripts\activate
 python tests/verify_all.py
 ```
+
+## Phase 0 Contract
+The solver baseline is frozen.
+- **Objective Truth**: Fixed costs apply ONLY to `MONEY`.
+- **Determinism**: `certify_phase0.py` acts as the gatekeeper for any semantic changes.
+- **CI**: `verify_all.py` is the single source of truth for branch protection.
 
 ## Known Limitations
 1. **Interactive Map**: Customers CRUD actions are placeholders.
