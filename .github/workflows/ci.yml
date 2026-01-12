@@ -1,0 +1,38 @@
+name: VRP Verification
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  solver-verification:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./solver-py
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run Verification Harness
+      run: python tests/verify_all.py
+
+    - name: Upload Artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: verification-logs
+        path: solver-py/artifacts/verification/
